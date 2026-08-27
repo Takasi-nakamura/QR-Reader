@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <meta name="theme-color" content="#ffffff">
+
+  <meta
+    name="description"
+    content="Smart Life - シンプルでスタイリッシュな生活ダッシュボード"
+  >
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./style.css">
+
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="./icons/icon-192.svg"
+  >
+
+  <title>Smart Life</title>
+</head>
+
+<body>
+
+  <!-- =========================
+       App
+  ========================== -->
+  <div id="app">
+
+    <!-- =========================
+         Header
+    ========================== -->
+    <header class="app-header">
+
+      <div class="brand">
+        <div class="brand-icon">SL</div>
+        <div class="brand-name">Smart Life</div>
+      </div>
+
+      <div class="header-actions">
+
+        <!-- PWA Install -->
+        <button
+          id="installButton"
+          class="header-button install-button"
+          type="button"
+          aria-label="Smart Lifeをインストール"
+          hidden
+        >
+          ↓
+        </button>
+
+        <!-- Widget Add -->
+        <button
+          id="addWidgetButton"
+          class="header-button"
+          type="button"
+          aria-label="ウィジェットを追加"
+        >
+          +
+        </button>
+
+        <!-- Layout -->
+        <button
+          id="layoutButton"
+          class="header-button"
+          type="button"
+          aria-label="レイアウトを変更"
+        >
+          ⌗
+        </button>
+
+        <!-- Settings -->
+        <button
+          id="settingsButton"
+          class="header-button"
+          type="button"
+          aria-label="設定"
+        >
+          ⚙
+        </button>
+
+      </div>
+
+    </header>
+
+
+    <!-- =========================
+         Dashboard
+    ========================== -->
+    <main
+      id="dashboard"
+      class="dashboard"
+      aria-live="polite"
+    >
+    </main>
+
+  </div>
+
+
+  <!-- =========================
+       Modal
+  ========================== -->
+  <div
+    id="modal"
+    class="modal"
+    hidden
+  >
+
+    <div
+      class="modal-overlay"
+      data-close-modal
+    ></div>
+
+    <section
+      class="modal-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
+
+      <div class="modal-header">
+
+        <h2 id="modalTitle">
+          Smart Life
+        </h2>
+
+        <button
+          id="modalClose"
+          class="modal-close"
+          type="button"
+          aria-label="閉じる"
+        >
+          ×
+        </button>
+
+      </div>
+
+      <div
+        id="modalContent"
+        class="modal-content"
+      >
+      </div>
+
+    </section>
+
+  </div>
+
+
+  <!-- =========================
+       Toast
+  ========================== -->
+  <div
+    id="toast"
+    class="toast"
+    role="status"
+    aria-live="polite"
+  >
+  </div>
+
+
+  <!-- =========================
+       JavaScript
+  ========================== -->
+  <script src="./app.js"></script>
+
+</body>
+</html>

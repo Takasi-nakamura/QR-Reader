@@ -1,0 +1,9 @@
+:root{
+  --accent:#5b5ce2; --bg:#f7f8fb; --surface:#fff; --text:#17181c;
+  --line:#e7e8ee; --shadow:0 12px 35px rgba(30,35,60,.07); --radius:24px;
+}
+body { margin:0; background:var(--bg); color:var(--text); font-family: sans-serif; }
+.app-header { height:70px; display:flex; align-items:center; justify-content:space-between; padding:0 20px; background:var(--surface); border-bottom:1px solid var(--line); }
+.shell { padding: 20px; }
+.dashboard { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.widget { background:var(--surface); padding:20px; border-radius:var(--radius); box-shadow:var(--shadow); }
