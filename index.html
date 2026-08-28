@@ -1,26 +1,106 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#ffffff">
-  <link rel="stylesheet" href="./style.css">
-  <title>Smart Life</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <meta name="theme-color" content="#111111">
+  <meta name="description" content="軽量・高速なQRコードリーダー">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+
+  <title>QR Reader</title>
 </head>
+
 <body>
-  <div id="toast" class="toast"></div>
-  <header class="app-header">
-    <div class="brand"><span>Smart Life</span></div>
-    <div class="header-actions">
-      <button class="icon-btn" id="settingsBtn">⚙</button>
-    </div>
-  </header>
-  <main class="shell">
-    <section class="hero">
-      <h1>Good day.<br><span>Make life simpler.</span></h1>
+
+  <main class="app">
+
+    <header class="header">
+      <div>
+        <h1>QR Reader</h1>
+        <p>Fast & Simple Scanner</p>
+      </div>
+
+      <button id="cameraSwitch" class="icon-button" aria-label="カメラ切り替え">
+        ↻
+      </button>
+    </header>
+
+    <section class="scanner-card">
+
+      <div class="camera-container">
+
+        <video id="camera" autoplay playsinline muted></video>
+
+        <div class="scanner-overlay">
+
+          <div class="corner top-left"></div>
+          <div class="corner top-right"></div>
+          <div class="corner bottom-left"></div>
+          <div class="corner bottom-right"></div>
+
+          <div class="scan-line"></div>
+
+        </div>
+
+        <div id="cameraMessage" class="camera-message">
+          <div class="camera-icon">⌾</div>
+          <p>カメラを起動しています</p>
+        </div>
+
+      </div>
+
+      <p class="hint">
+        QRコードを枠内に合わせてください
+      </p>
+
     </section>
-    <section id="dashboard" class="dashboard"></section>
+
+    <section id="result" class="result hidden">
+
+      <div class="result-header">
+        <span class="success-icon">✓</span>
+
+        <div>
+          <h2>QRコードを読み取りました</h2>
+          <p>結果を選択してください</p>
+        </div>
+      </div>
+
+      <div id="resultText" class="result-text"></div>
+
+      <div class="actions">
+
+        <button id="copyButton" class="button secondary">
+          コピー
+        </button>
+
+        <button id="openButton" class="button primary">
+          ブラウザで開く
+        </button>
+
+      </div>
+
+      <button id="scanAgain" class="scan-again">
+        もう一度スキャン
+      </button>
+
+    </section>
+
+    <button id="startButton" class="start-button">
+      カメラを起動
+    </button>
+
   </main>
-  <script src="./app.js" defer></script>
+
+  <canvas id="canvas" hidden></canvas>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="app.js"></script>
+
 </body>
 </html>
