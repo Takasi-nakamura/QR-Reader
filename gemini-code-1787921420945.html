@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Scanner</title>
+  <!-- PWA Settings -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html5-qrcode Library -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <style>
+    /* カメラ映像のトリミング調整とミラー反転防止 */
+    #reader video {
+      object-fit: cover !important;
+      border-radius: 1.5rem;
+    }
+    /* スキャン線のアニメーション */
+    @keyframes scan {
+      0% { top: 0%; opacity: 0.8; }
+      50% { top: 100%; opacity: 0.8; }
+      100% { top: 0%; opacity: 0.8; }
+    }
+    .scan-line {
+      animation: scan 2.5s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-between p-4 font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="w-full max-w-md text-center py-4">
+    <h1 class="text-xl font-bold tracking-wider text-slate-200">QR SCANNER</h1>
+  </header>
+
+  <!-- Main View (Scanner Container) -->
+  <main class="w-full max-w-md flex-1 flex flex-col items-center justify-center relative">
+    
+    <!-- カメラ枠（モダン・角丸） -->
+    <div id="scanner-wrapper" class="relative w-full aspect-square max-w-[320px] bg-slate-800/80 rounded-3xl overflow-hidden shadow-2xl border border-slate-700/50 backdrop-blur flex items-center justify-center">
+      
+      <!-- カメラ描画領域 -->
+      <div id="reader" class="w-full h-full"></div>
+
+      <!-- スキャンアニメーション＆ガイド枠 -->
+      <div id="scan-overlay" class="absolute inset-0 pointer-events-none flex items-center justify-center">
+        <!-- ターゲット枠 -->
+        <div class="w-3/4 h-3/4 border-2 border-indigo-400/40 rounded-2xl relative overflow-hidden">
+          <!-- レーザー線 -->
+          <div class="scan-line absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent shadow-[0_0_8px_#818cf8]"></div>
+        </div>
+      </div>
+
+      <!-- カメラ無効・許可待ち画面 -->
+      <div id="start-prompt" class="absolute inset-0 bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-10 transition-opacity duration-300">
+        <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center mb-4">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+        </div>
+        <p class="text-sm text-slate-300 mb-6">カメラへのアクセスを許可して<br>スキャンを開始します</p>
+        <button id="start-btn" class="w-full py-3.5 px-6 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium rounded-2xl shadow-lg shadow-indigo-600/30 transition-all duration-200">
+          カメラを起動する
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Modal Result Sheet -->
+  <div id="result-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 p-4">
+    <div class="w-full max-w-md bg-slate-800 border border-slate-700/60 rounded-3xl p-6 shadow-2xl transform translate-y-8 transition-transform duration-300" id="modal-card">
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-xs font-semibold tracking-wider text-indigo-400 uppercase">読み取り完了</span>
+        <button id="close-modal" class="text-slate-400 hover:text-slate-200 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- URL表示エリア -->
+      <div class="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-4 mb-6 break-all max-h-32 overflow-y-auto">
+        <p id="result-text" class="text-slate-200 text-sm font-mono"></p>
+      </div>
+
+      <!-- アクションボタン -->
+      <div class="grid grid-cols-2 gap-3">
+        <button id="copy-btn" class="py-3.5 px-4 bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-100 font-medium rounded-2xl flex items-center justify-center gap-2 transition-all duration-200">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          <span id="copy-text">コピー</span>
+        </button>
+        <a id="open-btn" href="#" target="_blank" rel="noopener noreferrer" class="py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all duration-200 text-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          開く
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="w-full max-w-md text-center py-4 text-xs text-slate-500">
+    PWA Ready QR Reader
+  </footer>
+
+  <script>
+    let html5QrCode;
+    let scannedUrl = '';
+
+    const startPrompt = document.getElementById('start-prompt');
+    const startBtn = document.getElementById('start-btn');
+    const resultModal = document.getElementById('result-modal');
+    const modalCard = document.getElementById('modal-card');
+    const resultText = document.getElementById('result-text');
+    const copyBtn = document.getElementById('copy-btn');
+    const copyText = document.getElementById('copy-text');
+    const openBtn = document.getElementById('open-btn');
+    const closeModal = document.getElementById('close-modal');
+
+    // カメラの自動開始を試みる（ブラウザのポリシーに従う）
+    window.addEventListener('DOMContentLoaded', () => {
+      initScanner();
+    });
+
+    startBtn.addEventListener('click', () => {
+      initScanner();
+    });
+
+    function initScanner() {
+      html5QrCode = new Html5Qrcode("reader");
+      
+      const config = { 
+        fps: 15, 
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
+      };
+
+      // 背面カメラを優先指定
+      html5QrCode.start(
+        { facingMode: "environment" }, 
+        config, 
+        onScanSuccess
+      ).then(() => {
+        startPrompt.classList.add('opacity-0', 'pointer-events-none');
+      }).catch(err => {
+        console.warn("カメラ自動起動に失敗またはアクセス拒否:", err);
+        startPrompt.classList.remove('opacity-0', 'pointer-events-none');
+      });
+    }
+
+    // QRコード読み取り成功時の処理
+    function onScanSuccess(decodedText) {
+      // 成功時にスキャンを一時停止
+      html5QrCode.pause(true);
+      
+      scannedUrl = decodedText;
+      resultText.textContent = decodedText;
+
+      // URLかどうかチェックして「開く」ボタンのリンクを設定
+      if (isValidUrl(decodedText)) {
+        openBtn.href = decodedText;
+        openBtn.classList.remove('opacity-50', 'pointer-events-none');
+      } else {
+        openBtn.href = "#";
+        openBtn.classList.add('opacity-50', 'pointer-events-none');
+      }
+
+      showModal();
+    }
+
+    function isValidUrl(string) {
+      try {
+        const url = new URL(string);
+        return url.protocol === "http:" || url.protocol === "https:";
+      } catch (_) {
+        return false;
+      }
+    }
+
+    // モーダル制御
+    function showModal() {
+      resultModal.classList.remove('opacity-0', 'pointer-events-none');
+      modalCard.classList.remove('translate-y-8');
+    }
+
+    function hideModal() {
+      resultModal.classList.add('opacity-0', 'pointer-events-none');
+      modalCard.classList.add('translate-y-8');
+      copyText.textContent = 'コピー';
+      
+      // スキャン再開
+      if (html5QrCode) {
+        html5QrCode.resume();
+      }
+    }
+
+    closeModal.addEventListener('click', hideModal);
+
+    // コピー機能
+    copyBtn.addEventListener('click', async () => {
+      if (!scannedUrl) return;
+      try {
+        await navigator.clipboard.writeText(scannedUrl);
+        copyText.textContent = 'コピー完了！';
+        setTimeout(() => {
+          copyText.textContent = 'コピー';
+        }, 2000);
+      } catch (err) {
+        console.error('コピー失敗:', err);
+      }
+    });
+
+    // PWA ServiceWorker 登録
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW reg error:', err));
+      });
+    }
+  </script>
+</body>
+</html>
