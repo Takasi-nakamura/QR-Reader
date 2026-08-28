@@ -15,8 +15,12 @@ async function initialize(){
 async function startCamera(){
   stopCamera(); hideAllScreens(); scannerScreen.classList.remove("hidden"); statusElement.textContent="カメラを起動しています…"; detected=false;
   try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facingMode},width:{ideal:1280},height:{ideal:720}},audio:false});
-    video.srcObject=stream; await video.play(); statusElement.textContent="QRコードを探しています"; scanning=true; cameraSwitch.hidden=false; scanFrame();
+    const constraints={video:{facingMode:{ideal:facingMode},width:{ideal:1280},height:{ideal:720}},audio:false};
+    stream=await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject=stream;
+    video.style.objectFit="cover";
+    await video.play();
+    statusElement.textContent="QRコードを探しています"; scanning=true; cameraSwitch.hidden=false; scanFrame();
   }catch(error){console.error(error);handleCameraError(error)}
 }
 function scanFrame(){
@@ -24,7 +28,8 @@ function scanFrame(){
   if(video.readyState<video.HAVE_ENOUGH_DATA||!video.videoWidth){animationFrame=requestAnimationFrame(scanFrame);return}
   const w=video.videoWidth,h=video.videoHeight,max=900,ratio=Math.min(1,max/w),tw=Math.round(w*ratio),th=Math.round(h*ratio);
   if(canvas.width!==tw||canvas.height!==th){canvas.width=tw;canvas.height=th}
-  ctx.drawImage(video,0,0,tw,th);
+  // Draw exactly the decoded video frame. No CSS transforms, filters, or color manipulation.
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation="source-over";ctx.filter="none";ctx.drawImage(video,0,0,tw,th);ctx.restore();
   const image=ctx.getImageData(0,0,tw,th),code=jsQR(image.data,tw,th,{inversionAttempts:"attemptBoth"});
   if(code?.data){const now=Date.now();if(now-lastDetectionTime>1200){lastDetectionTime=now;handleQRCode(code.data)}}
   animationFrame=requestAnimationFrame(scanFrame);
@@ -34,7 +39,7 @@ function normalizeURL(value){const v=value.trim();if(/^https?:\/\//i.test(v))ret
 function isURL(value){try{const u=new URL(value);return u.protocol==="http:"||u.protocol==="https:"}catch{return false}}
 function showResult(value){hideAllScreens();resultScreen.classList.remove("hidden");resultUrl.textContent=value;resultUrl.title=value;const url=isURL(value);resultType.textContent=url?"URL":"TEXT";openButton.disabled=!url}
 copyButton.addEventListener("click",async()=>{if(!currentValue)return;try{await navigator.clipboard.writeText(currentValue);showToast("コピーしました")}catch{const t=document.createElement("textarea");t.value=currentValue;t.style.cssText="position:fixed;opacity:0";document.body.appendChild(t);t.select();try{document.execCommand("copy");showToast("コピーしました")}catch{showToast("コピーできませんでした")}t.remove()}});
-openButton.addEventListener("click",()=>{if(isURL(currentValue))window.open(currentValue,"_blank","noopener,noreferrer")});
+openButton.addEventListener("click",()=>{if(isURL(currentValue))window.location.href=currentValue});
 rescanButton.addEventListener("click",()=>{currentValue="";startCamera()});
 startCameraButton.addEventListener("click",startCamera);
 cameraSwitch.addEventListener("click",()=>{facingMode=facingMode==="environment"?"user":"environment";startCamera()});
