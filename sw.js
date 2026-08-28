@@ -1,6 +1,6 @@
 const CACHE_NAME = "qr-reader-v1";
 
-const FILES_TO_CACHE = [
+const CACHE_FILES = [
   "./",
   "./index.html",
   "./style.css",
@@ -9,66 +9,104 @@ const FILES_TO_CACHE = [
 ];
 
 
-// Install
+/* --------------------------------
+   Install
+-------------------------------- */
 
-self.addEventListener("install", event => {
+self.addEventListener(
+  "install",
+  event => {
 
-  event.waitUntil(
+    event.waitUntil(
 
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(FILES_TO_CACHE);
-      })
+      caches
+        .open(CACHE_NAME)
+        .then(cache => {
 
-  );
+          return cache.addAll(
+            CACHE_FILES
+          );
 
-  self.skipWaiting();
+        })
 
-});
-
-
-// Activate
-
-self.addEventListener("activate", event => {
-
-  event.waitUntil(
-
-    caches.keys().then(keys => {
-
-      return Promise.all(
-
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
-
-      );
-
-    })
-
-  );
-
-  self.clients.claim();
-
-});
+    );
 
 
-// Fetch
+    self.skipWaiting();
+  }
+);
 
-self.addEventListener("fetch", event => {
 
-  event.respondWith(
+/* --------------------------------
+   Activate
+-------------------------------- */
 
-    caches.match(event.request)
-      .then(cachedResponse => {
+self.addEventListener(
+  "activate",
+  event => {
 
-        if (cachedResponse) {
-          return cachedResponse;
-        }
+    event.waitUntil(
 
-        return fetch(event.request);
+      caches
+        .keys()
+        .then(keys => {
 
-      })
+          return Promise.all(
 
-  );
+            keys
+              .filter(
+                key =>
+                  key !== CACHE_NAME
+              )
 
-});
+              .map(
+                key =>
+                  caches.delete(key)
+              )
+
+          );
+
+        })
+
+    );
+
+
+    self.clients.claim();
+  }
+);
+
+
+/* --------------------------------
+   Fetch
+-------------------------------- */
+
+self.addEventListener(
+  "fetch",
+  event => {
+
+    /*
+      QR Reader本体はCache First。
+
+      CDNのjsQRはネットワークから取得。
+    */
+
+    event.respondWith(
+
+      caches
+        .match(event.request)
+        .then(cached => {
+
+          if (cached) {
+            return cached;
+          }
+
+
+          return fetch(
+            event.request
+          );
+
+        })
+
+    );
+  }
+);
