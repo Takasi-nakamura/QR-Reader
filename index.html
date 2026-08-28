@@ -197,6 +197,118 @@
   <script src="./app.js"></script>
 
 </body>
+</html>        <div
+          id="cameraMessage"
+          class="camera-message"
+        >
+
+          <div class="camera-icon">
+            ◉
+          </div>
+
+          <p>
+            カメラを起動しています
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <p class="hint">
+        QRコードを枠内に合わせてください
+      </p>
+
+    </section>
+
+
+    <!-- Result -->
+    <section
+      id="result"
+      class="result hidden"
+    >
+
+      <div class="result-header">
+
+        <div class="success-icon">
+          ✓
+        </div>
+
+        <div>
+          <h2>
+            QRコードを読み取りました
+          </h2>
+
+          <p>
+            読み取り結果
+          </p>
+        </div>
+
+      </div>
+
+
+      <div
+        id="resultText"
+        class="result-text"
+      ></div>
+
+
+      <div class="actions">
+
+        <button
+          id="copyButton"
+          class="button secondary"
+          type="button"
+        >
+          コピー
+        </button>
+
+        <button
+          id="openButton"
+          class="button primary"
+          type="button"
+        >
+          ブラウザで開く
+        </button>
+
+      </div>
+
+
+      <button
+        id="scanAgain"
+        class="scan-again"
+        type="button"
+      >
+        もう一度スキャン
+      </button>
+
+    </section>
+
+  </main>
+
+
+  <!-- QR decoder canvas -->
+  <canvas id="canvas" hidden></canvas>
+
+
+  <!-- Toast -->
+  <div
+    id="toast"
+    class="toast"
+    role="status"
+    aria-live="polite"
+  ></div>
+
+
+  <!-- QR decoder -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"
+  ></script>
+
+  <!-- App -->
+  <script src="./app.js"></script>
+
+</body>
 </html>    rel="stylesheet"
     href="style.css"
   >
