@@ -1,4 +1,9 @@
-const CACHE_NAME = "qr-reader-v1";
+"use strict";
+
+
+const CACHE_NAME =
+  "qr-reader-v2";
+
 
 const CACHE_FILES = [
   "./",
@@ -9,9 +14,9 @@ const CACHE_FILES = [
 ];
 
 
-/* --------------------------------
+/* ================================
    Install
--------------------------------- */
+================================ */
 
 self.addEventListener(
   "install",
@@ -35,6 +40,112 @@ self.addEventListener(
     self.skipWaiting();
   }
 );
+
+
+/* ================================
+   Activate
+================================ */
+
+self.addEventListener(
+  "activate",
+  event => {
+
+    event.waitUntil(
+
+      caches
+        .keys()
+        .then(keys => {
+
+          return Promise.all(
+
+            keys
+              .filter(
+                key =>
+                  key !== CACHE_NAME
+              )
+
+              .map(
+                key =>
+                  caches.delete(key)
+              )
+
+          );
+
+        })
+
+    );
+
+
+    self.clients.claim();
+  }
+);
+
+
+/* ================================
+   Fetch
+================================ */
+
+self.addEventListener(
+  "fetch",
+  event => {
+
+    /*
+      自分のアプリファイルは
+      Cache First。
+    */
+
+    const url =
+      new URL(
+        event.request.url
+      );
+
+
+    if (
+      url.origin ===
+      self.location.origin
+    ) {
+
+      event.respondWith(
+
+        caches
+          .match(event.request)
+          .then(cached => {
+
+            if (cached) {
+              return cached;
+            }
+
+            return fetch(
+              event.request
+            );
+          })
+
+      );
+
+      return;
+    }
+
+
+    /*
+      jsQR CDNなど外部リソースは
+      Network First。
+    */
+
+    event.respondWith(
+
+      fetch(
+        event.request
+      ).catch(() => {
+
+        return caches.match(
+          event.request
+        );
+
+      })
+
+    );
+  }
+););
 
 
 /* --------------------------------
