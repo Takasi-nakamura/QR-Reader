@@ -20,6 +20,7 @@ async function startCamera(){
     stream=await navigator.mediaDevices.getUserMedia(constraints);
     video.srcObject=stream;
     video.style.objectFit="cover";
+    video.style.filter="none";
     await video.play();
     statusElement.textContent="QRコードを探しています";
     scanning=true;
@@ -34,9 +35,8 @@ function scanFrame(now=performance.now()){
     lastScanTime=now;
     const w=video.videoWidth,h=video.videoHeight,max=900,ratio=Math.min(1,max/w),tw=Math.round(w*ratio),th=Math.round(h*ratio);
     if(canvas.width!==tw||canvas.height!==th){canvas.width=tw;canvas.height=th}
-    ctx.drawImage(video,0,0,tw,th);
-    const image=ctx.getImageData(0,0,tw,th);
-    const code=jsQR(image.data,tw,th,{inversionAttempts:"attemptBoth"});
+    ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation="source-over";ctx.filter="none";ctx.drawImage(video,0,0,tw,th);
+    const image=ctx.getImageData(0,0,tw,th),code=jsQR(image.data,tw,th,{inversionAttempts:"attemptBoth"});
     if(code?.data){const time=Date.now();if(time-lastDetectionTime>1200){lastDetectionTime=time;handleQRCode(code.data)}}
   }
   animationFrame=requestAnimationFrame(scanFrame);
@@ -45,9 +45,9 @@ function handleQRCode(data){if(detected)return;detected=true;scanning=false;curr
 function normalizeURL(value){const v=value.trim();if(/^https?:\/\//i.test(v))return v;if(/^www\./i.test(v)||/^[a-z0-9.-]+\.[a-z]{2,}(?:[/:?#]|$)/i.test(v))return "https://"+v;return v}
 function isURL(value){try{const u=new URL(value);return u.protocol==="http:"||u.protocol==="https:"}catch{return false}}
 function showResult(value){hideAllScreens();resultScreen.classList.remove("hidden");resultUrl.textContent=value;resultUrl.title=value;const url=isURL(value);resultType.textContent=url?"URL":"TEXT";openButton.disabled=!url}
-copyButton.addEventListener("click",async()=>{if(!currentValue)return;try{await navigator.clipboard.writeText(currentValue);showToast("コピーしました")}catch{const t=document.createElement("textarea");t.value=currentValue;t.style.cssText="position:fixed;opacity:0";document.body.appendChild(t);t.select();try{document.execCommand("copy");showToast("コピーしました")}catch{showToast("コピーできませんでした")}t.remove()}});
-shareButton.addEventListener("click",async()=>{if(!currentValue)return;if(!navigator.share){await copyCurrentValue();showToast("共有機能がないためコピーしました");return}try{await navigator.share({text:currentValue})}catch(error){if(error?.name!=="AbortError")showToast("共有できませんでした")}});
-openButton.addEventListener("click",()=>{if(isURL(currentValue))window.location.href=currentValue});
+copyButton.addEventListener("click",async()=>{if(!currentValue)return;const ok=await copyCurrentValue();showToast(ok?"コピーしました":"コピーできませんでした")});
+shareButton.addEventListener("click",async()=>{if(!currentValue)return;if(!navigator.share){const ok=await copyCurrentValue();showToast(ok?"共有機能がないためコピーしました":"共有できませんでした");return}try{await navigator.share({text:currentValue})}catch(error){if(error?.name!=="AbortError")showToast("共有できませんでした")}});
+openButton.addEventListener("click",()=>{if(isURL(currentValue))window.open(currentValue,"_blank","noopener,noreferrer")});
 rescanButton.addEventListener("click",()=>{currentValue="";startCamera()});
 startCameraButton.addEventListener("click",startCamera);
 cameraSwitch.addEventListener("click",()=>{facingMode=facingMode==="environment"?"user":"environment";startCamera()});
